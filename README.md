@@ -10,10 +10,22 @@
 
 **简洁** · **安全** · **免费**
 
+## ⚠️ 破坏性更新说明
+
+**存储后端已从 KV 迁移至 Blob，数据不会自动迁移。**
+
+如果你是从旧版本（使用 KV 存储）升级，请在部署前完成以下步骤，否则历史评论数据将丢失：
+
+1. **导出数据**：在旧版本的 Twikoo 管理面板中，进入「数据管理」→「导出」，下载评论备份文件（JSON 格式）。
+2. **部署新版本**：按下方快速上手步骤完成部署（无需再绑定 KV，Blob 存储会自动初始化）。
+3. **导入数据**：在新版本的 Twikoo 管理面板中，进入「数据管理」→「导入」，上传之前备份的文件。
+
+---
+
 ## 特性
 
 - 基于 EdgeOne Pages 边缘计算，全球加速
-- 使用 KV 存储，无需额外数据库
+- 使用 Blob 对象存储，强一致性读写，无需额外配置
 - 支持邮件通知、即时消息推送
 - 一键部署，开箱即用
 
@@ -29,15 +41,13 @@
 
 查看 [腾讯云 EdgeOne Pages 文档](https://pages.edgeone.ai/zh/document/product-introduction) 了解更多详情。
 
-需要注意，你还是需要新建一个 KV，并且绑定到项目中:
-
-![设置的 KV](./docs/static/eoKvSetting.png)
+Blob 存储无需手动创建或绑定，首次请求时平台会自动初始化命名空间 `twikoo`。
 
 ### 完整教程 | Full Tutorial
 
 Twikoo 的完整教程，参考 Twikoo 官方项目: https://github.com/twikoojs/twikoo 以及 Twikoo 的[快速上手](https://twikoo.js.org/quick-start.html)
 
-手动部署到 EdgeOne Pages 的方法如下： 
+手动部署到 EdgeOne Pages 的方法如下：
 
 #### 部署步骤 | Deployment Steps
 
@@ -50,20 +60,16 @@ Twikoo 的完整教程，参考 Twikoo 官方项目: https://github.com/twikoojs
    - 选择 GitHub 作为代码源
    - 关联本仓库。或者直接下载本仓库，手动上传到 EdgeOne Pages 里（会自动触发部署）。
 
-3. **配置 KV 存储**
-   - 在 EdgeOne Pages 控制台创建 KV 命名空间
-   - 将 KV 命名空间绑定到项目，变量名设为：`TWIKOO_KV`
-
-5. **配置跨域（可选）**
+3. **配置跨域（可选）**
    - 在 EdgeOne Pages 控制台添加环境变量 `CORS_ALLOW_ORIGIN`
    - 格式：`example.com,blog.example.com`（多个域名用逗号分隔）
    - 不设置则允许所有域名访问
 
-6. **触发部署**
-   - 三种方法触发不熟: ① Fork 代码到自己仓库，EdgeOne Pages 进行关联，后续会自动触发部署。② 直接本地安装 edgeone-cli 情况下，`edgeone pages link`、`edgeone pages deploy`部署。③ 手动上传代码到 EdgeOne Pages 里覆盖。
+4. **触发部署**
+   - 三种方法触发部署：① Fork 代码到自己仓库，EdgeOne Pages 进行关联，后续会自动触发部署。② 直接本地安装 edgeone-cli 情况下，`edgeone pages link`、`edgeone pages deploy` 部署。③ 手动上传代码到 EdgeOne Pages 里覆盖。
    - 部署完成后，获取你的 EdgeOne Pages 地址作为 twikoo 的环境配置
 
-7. **前端配置**
+5. **前端配置**
    ```html
    <script>
      twikoo.init({
@@ -73,21 +79,16 @@ Twikoo 的完整教程，参考 Twikoo 官方项目: https://github.com/twikoojs
    </script>
    ```
 
-关键步骤截图:
-
-![设置的 KV](./docs/static/eoKvSetting.png)
-
 #### 环境配置要求 | Environment Requirements
 
 - **Node.js**: 18+ (EdgeOne Pages 自动提供)
-- **KV 存储**: 必须创建并绑定 TWIKOO_KV 命名空间
+- **Blob 存储**: 无需手动配置，平台自动初始化
 
 #### 常见问题解决方法 | Common Issues
 
-1. **KV 存储连接失败**
-   - 检查 KV 命名空间是否正确绑定
-   - 确认变量名为 `TWIKOO_KV`
-   - 重新部署项目
+1. **评论提交后刷新看不到**
+   - 已使用强一致性读写（`consistency: "strong"`），正常情况下提交后立即可见
+   - 若仍有问题，检查 Cloud Function 日志排查 Blob 写入错误
 
 2. **邮件通知不工作**
    - 验证 SMTP 服务配置是否正确
@@ -95,10 +96,8 @@ Twikoo 的完整教程，参考 Twikoo 官方项目: https://github.com/twikoojs
    - 确认邮箱密码或应用专用密码
 
 3. **评论提交失败**
-   - 检查网络连接和 Edge Function 地址
-   - 确认 KV 存储空间是否充足
+   - 检查网络连接和 Cloud Function 地址
    - 查看部署日志排查错误
-
 
 #### 注意事项 | Important Notes
 
@@ -109,9 +108,9 @@ Twikoo 的完整教程，参考 Twikoo 官方项目: https://github.com/twikoojs
 - UA 获取、浏览器类型正常。
 - IP 归属地查询正常。
 
-KV 存储的评论:
+Blob 存储的评论:
 
-![KV 存储的评论](./docs/static/eoKvComments.png)
+![Blob 存储的评论](./docs/static/eoBlobComments.png)
 
 ## 开发 | Development
 
@@ -132,34 +131,17 @@ node build.cjs
 
 **项目结构说明：**
 ```
-├── edge-functions/
-│   └── api/
-│       └── kv.js              # Edge Function KV 数据库操作层
-│   └── api/kv.js              # Edge Function - KV 数据库操作
-├── node-functions/
-│   ├── index.js               # Node Function 主入口（处理评论逻辑）
+├── cloud-functions/
+│   ├── index.js               # Node Function 主入口（含 Blob 数据库层）
 │   ├── ip2region-searcher.js  # IP 归属地查询器（纯内存实现）
 │   └── ip2region-data.js      # IP 数据库（构建时自动生成）
 ├── package.json               # 项目依赖配置
-├── build.cjs                  # 构建检查脚本
-└── .cnb.yml                   # CNB 环境配置（可选）
-│   ├── index.js            # Node Function - 评论业务逻辑
-│   ├── ip2region-searcher.js  # IP 归属地查询（纯内存）
-│   └── ip2region-data.js   # IP 数据库（构建时生成）
-├── build.cjs               # 构建脚本
-└── package.json
+└── build.cjs                  # 构建检查脚本
 ```
 
 **架构说明：**
-- **Edge Function (`edge-functions/api/kv.js`)**: 运行在边缘节点，负责 KV 数据库的读写操作
-- **Node Function (`node-functions/index.js`)**: 运行在 Node.js 环境，处理评论业务逻辑、邮件通知等
-- Node Function 通过内部 HTTP 调用 Edge Function 的 KV API
-
-**开发注意事项：**
-- Edge Functions 使用 KV 存储作为数据库
-- Node Functions 用于处理评论逻辑和邮件通知
-- 环境变量在 EdgeOne Pages 控制台配置
-- 本地开发时需要模拟 KV 环境
+- **Cloud Function (`cloud-functions/index.js`)**: 运行在 Node.js 环境，处理评论业务逻辑、邮件通知，并直接通过 `@edgeone/pages-blob` SDK 读写 Blob 存储
+- Blob 命名空间为 `twikoo`，使用强一致性模式，确保评论写入后立即可读
 
 如果您的改动能够帮助到更多人，欢迎提交 Pull Request！
 
